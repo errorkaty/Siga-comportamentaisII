@@ -3,7 +3,7 @@ package siga;
 public class Confirmada implements EstadoMatricula {
     @Override
     public void confirmar(Matricula matricula) {
-        throw erro("confirmar");
+        matricula.mudarPara(new Concluida());
     }
 
     @Override
@@ -21,8 +21,4 @@ public class Confirmada implements EstadoMatricula {
         return "CONFIRMADA";
     }
 
-    private IllegalStateException erro(String operacao) {
-        return new IllegalStateException("Nao e possivel " + operacao
-                + " uma matricula " + getSituacao());
-    }
 }
