@@ -1,0 +1,19 @@
+=== SIGA - Aula 13: Template Method e State ===
+
+1) Documentos emitidos pelo mesmo roteiro
+   [log] HISTORICO emitido para 2024001
+   [log] ATESTADO emitido para 2024001
+   [log] DECLARACAO emitido para 2024001
+
+2) Documento para aluno irregular
+   [erro] Aluno irregular: 2024002
+   Registros no log: [HISTORICO - 2024001, ATESTADO - 2024001, DECLARACAO - 2024001]
+
+3) Ciclo de vida da matricula
+   situacao inicial: PRE_MATRICULADA
+   apos confirmar: CONFIRMADA
+   apos trancar: TRANCADA
+   apos confirmar: CONFIRMADA
+   apos cancelar: CANCELADA
+   [erro] Nao e possivel confirmar uma matricula CANCELADA
+   apos concluir: CONCLUIDA

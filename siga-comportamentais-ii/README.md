@@ -1,74 +1,46 @@
-# SIGA — Atividade de padrões comportamentais II: Template Method e State (código inicial)
+# SIGA — Padrões comportamentais II: Template Method e State
 
 **Técnicas de Programação II (TP2) · Aula 13** — CST em Desenvolvimento de Software Multiplataforma · Fatec de Porto Ferreira
 
-Este é o **código inicial** da atividade prática da Aula 13, a última com padrões de projeto. Ele compila e executa — e a saída já mostra um aluno irregular deixando rastro no log de um documento que nunca foi emitido. São **três deslizes**, e os dois padrões da aula resolvem todos eles.
-
-## Estrutura do projeto
-
-```
-siga-comportamentais-ii/
-└── src/
-    └── siga/
-        ├── Aluno.java                (entidade de domínio; pronta)
-        ├── LogAcademico.java         (registro de emissões; pronto)
-        ├── HistoricoEscolar.java     (rito duplicado — deslize 1)
-        ├── DeclaracaoVinculo.java    (rito duplicado E fora de ordem — deslizes 1 e 2)
-        ├── AtestadoFrequencia.java   (rito duplicado — deslize 1)
-        ├── Matricula.java            (ciclo de vida em condicionais — deslize 3)
-        └── Main.java                 (demonstra os três deslizes)
-```
-
 ## Como compilar e executar
 
-Pré-requisito: JDK 17 ou superior (`java -version` para verificar).
+Pré-requisito: JDK 17 ou superior.
 
 ```bash
-# 1. Compilar (a saída vai para a pasta "bin")
-javac -encoding UTF-8 -d bin src/siga/*.java
-
-# 2. Executar
+javac -encoding UTF-8 -d bin siga-comportamentais-ii/src/siga/*.java
 java -cp bin siga.Main
 ```
 
-Execute antes de ler o restante deste arquivo: a saída **mostra os três deslizes acontecendo**.
+## 1. Rito duplicado e inversão identificada
 
-## Os três deslizes propositais
+`HistoricoEscolar`, `AtestadoFrequencia` e `DeclaracaoVinculo` repetiam o mesmo rito: validar o aluno, montar cabeçalho, montar corpo, incluir rodapé e registrar a emissão.
 
-| # | Deslize | Onde | Por que é um problema |
-|---|---|---|---|
-| 1 | **O rito de emissão duplicado** | As três classes de documento | Cinco passos — validar, cabeçalho, corpo, rodapé, registrar — e **quatro deles são idênticos** nas três classes. Só o corpo varia. Um quarto documento seria uma quarta cópia. |
-| 2 | **Os passos fora de ordem** | `DeclaracaoVinculo` | Alguém inverteu: o **registro no log acontece antes da validação**. Execute com um aluno irregular e veja — o documento não é emitido, mas já consta no log. A ordem dos passos é uma regra, e regra copiada diverge. |
-| 3 | **O ciclo de vida em condicionais sobre uma String** | `Matricula` | As regras de transição estão espalhadas por três métodos, e não se lê o ciclo de vida inteiro em lugar nenhum. O estado "concluída" exigiria alterar os três. E, sendo a situação um texto, um erro de digitação só apareceria em produção. |
+Na declaração de vínculo, `LogAcademico.registrar` era chamado antes da validação. Por isso, ao emitir para o aluno irregular `2024002`, o programa lançava o erro de irregularidade, mas o log já registrava uma declaração que não foi emitida.
 
-## Sua tarefa
+## 2. Esqueleto único de emissão
 
-Siga as etapas da ficha de atividade prática:
+`DocumentoAcademico` concentra o rito no método `emitir(Aluno)`, declarado como `final`. A ordem é validação, cabeçalho, corpo, rodapé, assinatura quando aplicável e registro no log. Como o método é final, as subclasses não conseguem trocar essa ordem.
 
-1. **Localizar a inversão.** Identifique, nas três classes de documento, o rito duplicado, e aponte neste README o ponto exato em que a `DeclaracaoVinculo` está fora de ordem e qual é a consequência observável.
-2. **Criar o esqueleto.** Escreva a classe abstrata `DocumentoAcademico` com o método-template `emitir(Aluno)` declarado **`final`**, os passos invariantes (`validar`, `cabecalho`, `rodape`, `registrarEmissao`) implementados nela, e `corpo(Aluno)` como passo abstrato.
-3. **Converter os documentos.** Faça as três classes estenderem `DocumentoAcademico`, implementando apenas o `corpo`. Use um **gancho** `exigeAssinatura()`, com padrão `true`, que o `AtestadoFrequencia` sobrescreve para `false`.
-4. **Criar o State.** Escreva a interface `EstadoMatricula` e as quatro classes `PreMatriculada`, `Confirmada`, `Trancada` e `Cancelada`, com as transições **dentro** delas. Os três métodos públicos de `Matricula` devem ficar com uma linha cada, sem nenhum `if`.
-5. **Medir o ganho.** Acrescente o estado `Concluida`, alcançável a partir de `Confirmada`, e registre neste README **quantos arquivos você precisou tocar** — comparando com os três métodos que seriam alterados na versão inicial.
+O cabeçalho, o rodapé, a validação e o registro aparecem somente nessa classe. Para um aluno irregular, a validação interrompe a emissão antes do registro, impedindo rastros no log.
 
-## Critério de sucesso
+## 3. Documentos convertidos
 
-Ao final, verifique que: (a) o texto do cabeçalho e o do rodapé existem em **um único lugar**; (b) o método-template é `final`, de modo que nenhuma subclasse consiga inverter a ordem; (c) emitir qualquer documento para um aluno irregular **não deixa rastro no log**; (d) a palavra `if` não aparece em nenhum dos três métodos públicos de `Matricula`; e (e) acrescentar o estado `Concluida` custou **dois arquivos** — a classe nova e a `Confirmada`, que passa a oferecer a transição.
+`HistoricoEscolar`, `DeclaracaoVinculo` e `AtestadoFrequencia` estendem `DocumentoAcademico` e implementam apenas o corpo e o tipo do documento.
 
-> O item (c) é o teste que prova o Template Method. Se a `DeclaracaoVinculo` ainda registrar antes de validar depois da refatoração, é porque o método-template não ficou `final` — ou porque a subclasse o sobrescreveu em vez de preencher o `corpo`.
+O gancho `exigeAssinatura()` tem valor padrão `true`. `AtestadoFrequencia` o sobrescreve com `false`, por isso é emitido sem assinatura digital.
 
-## A linha que você deve conseguir apontar
+## 4. Ciclo de vida da matrícula
 
-No final da etapa 4, uma das suas classes de estado conterá algo como:
+`EstadoMatricula` define as operações de confirmar, trancar e cancelar. As classes `PreMatriculada`, `Confirmada`, `Trancada` e `Cancelada` contêm as transições e os erros permitidos em cada fase.
 
-```java
-matricula.mudarPara(new Confirmada());
-```
+`Matricula` mantém o estado atual e seus métodos públicos `confirmar`, `trancar` e `cancelar` delegam em uma linha para ele, sem condicionais. As transições são feitas pelas próprias classes de estado, por exemplo `matricula.mudarPara(new Confirmada())`.
 
-Essa é a linha que distingue o **State** do **Strategy** da aula passada. Uma política de desconto calcula e devolve um valor; ela jamais diria `matricula.setPolitica(new DescontoServidor())`. No State, os estados se conhecem e executam as transições. Se você conseguir explicar isso no README, entendeu o padrão.
+Isso diferencia State de Strategy: no Strategy, uma política calcula ou executa uma variação do comportamento; no State, cada estado conhece a próxima fase e troca o estado do próprio contexto.
 
-## Padrão de entrega
+## 5. Estado concluída
 
-Conforme a ficha de atividade prática: identificadores em português, um arquivo `.java` por classe pública, código formatado, entrega no repositório Git com README e commits descritivos. O uso de IA para gerar o código é proibido nesta atividade (ver seção 5.3 da ficha).
+`Concluida` foi acrescentada como fase final, alcançável a partir de `Confirmada`. Para essa ampliação, foram tocados dois arquivos do ciclo de vida já estabelecido: `Concluida.java`, com a nova fase, e `Confirmada.java`, que passa a direcionar para ela. Na versão inicial, uma fase nova exigiria alterar os três métodos condicionais de `Matricula`.
 
-> **Projeto Integrador — Etapa 2:** a entrega é **hoje**. Ela exige ao menos um padrão estrutural (Aulas 10 e 11) e ao menos um comportamental (Aulas 12 e 13), cada um com justificativa que descreva **o problema do SIGA antes de nomear o padrão**. O critério que mais pesa é a pertinência: dois padrões bem justificados valem mais que seis decorativos.
+## Verificação
+
+A execução demonstra a emissão dos três documentos, a ausência de registro adicional para o aluno irregular, as transições de pré-matrícula até cancelamento e a transição até concluída. A saída está em [docs/execucao.txt](../docs/execucao.txt).
