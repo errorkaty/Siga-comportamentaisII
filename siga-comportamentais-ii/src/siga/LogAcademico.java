@@ -3,7 +3,6 @@ package siga;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Registro de emissões. Pronto. */
 public class LogAcademico {
 
     private static final List<String> REGISTROS = new ArrayList<>();

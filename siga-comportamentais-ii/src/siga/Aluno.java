@@ -1,6 +1,5 @@
 package siga;
 
-/** Entidade de domínio. Pronta — não precisa ser alterada nesta atividade. */
 public class Aluno {
 
     private final String matricula;
